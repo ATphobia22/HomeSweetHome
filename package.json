@@ -1,0 +1,10 @@
+
+{
+  "name": "b2b-tucker-inc",
+  "version": "11.8.0",
+  "description": "v11.8 Autonomous Wealth Engine. Rigetti-Blackwell Hybrid Node for Anthony John Tucker.",
+  "license": "(MIT OR Apache-2.0)",
+  "dependencies": {
+    "semver": "^7.5.4"
+  }
+}
