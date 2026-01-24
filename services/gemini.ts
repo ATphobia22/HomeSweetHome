@@ -1,27 +1,17 @@
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { WorkflowStep, Brand, ApexTrigger, ArbitrageNode, FinancialForecast, RiskAssessment, Invoice, SpatialParcel, CodeExecutionPart, SovereignRepo } from "../types";
+import { WorkflowStep, Brand, ApexTrigger, ArbitrageNode, FinancialForecast, RiskAssessment, Invoice, SpatialParcel, CodeExecutionPart } from "../types";
 
 export class GeminiService {
   private getClient() {
+    // Creating a fresh instance to ensure it uses the most up-to-date API key
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
-  /**
-   * NPR NATIVE PARALLEL REASONER v1.0
-   * Implements teacher-free Map-Process-Reduce schema.
-   */
   async runNPRReasoning(task: string): Promise<string> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `[NPR ENGINE: PARALLEL_REASON_MODE]
- TASK: ${task}
- 
- SCHEMA:
- 1. <map>: Decompose into 3 parallel logic branches.
- 2. <process>: Execute thought branches independently.
- 3. <reduce>: Synthesize parallel outputs into a Sovereign Alpha Result.`,
+      contents: `[NPR ENGINE: PARALLEL_REASON_MODE]\n TASK: ${task}\n \n SCHEMA:\n 1. <map>: Decompose into 3 parallel logic branches.\n 2. <process>: Execute thought branches independently.\n 3. <reduce>: Synthesize parallel outputs into a Sovereign Alpha Result.`,
       config: {
         thinkingConfig: { thinkingBudget: 32768 }
       }
@@ -30,25 +20,15 @@ export class GeminiService {
     return response.text || "Reasoning cycle failed.";
   }
 
-  /**
-   * CLUSTER AUTO-CORRECT & SELF-HEALING
-   */
   async runSelfHealingOrchestration(errorContext: string): Promise<string> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `[SOVEREIGN_AUTO_CORRECT: ACTIVE]
-      CONTEXT: ${errorContext}
-      
-      Determine optimal remediation path for K8s pod issues, resource exhaustion, or alignment drift.
-      Suggest kubectl commands and parameter adjustments.`,
+      contents: `[SOVEREIGN_AUTO_CORRECT: ACTIVE]\nCONTEXT: ${errorContext}\n\nDetermine optimal remediation path for K8s pod issues or alignment drift.`,
     });
     return response.text || "Self-healing node failed.";
   }
 
-  /**
-   * GROUNDED GLOBAL SEARCH
-   */
   async runGroundedSearch(query: string): Promise<{ text: string; sources: { web: { uri: string; title: string } }[] }> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
@@ -74,37 +54,24 @@ export class GeminiService {
     };
   }
 
-  /**
-   * STRUCTURED ALPHA STRATEGY ANALYSIS
-   */
   async analyzeStructuredAlpha(ticker: string, initial: number, current: number): Promise<string> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Analyze a Dual Directional Trigger PLUS strategy for ${ticker}. 
-      Initial Index Level: ${initial}. 
-      Current/Final Level: ${current}. 
-      Explain the payoff scenario based on a 75% trigger level and absolute return features for moderate declines.`,
+      contents: `Analyze structured strategy for ${ticker}. Initial: ${initial}. Final: ${current}. Explain payoff.`,
     });
     return response.text || "Wealth engineering node failed.";
   }
 
-  /**
-   * SECURITY INTEGRITY SWEEP
-   */
   async runSecuritySweep(ip: string, openPorts: number[]): Promise<string> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Perform a vulnerability analysis for IP ${ip} with detected open ports: ${openPorts.join(', ')}. 
-      Identify potential IoT sensor risks and suggest hardening steps.`,
+      contents: `Perform vulnerability analysis for IP ${ip} with ports: ${openPorts.join(', ')}.`,
     });
     return response.text || "Security node failure.";
   }
 
-  /**
-   * QUANTUM ARBITRAGE ANALYSIS
-   */
   async analyzeQuantumArbitrage(imageUrl: string, mimeType: string): Promise<string> {
     const ai = this.getClient();
     const base64Data = imageUrl.includes('base64,') ? imageUrl.split('base64,')[1] : imageUrl;
@@ -113,16 +80,13 @@ export class GeminiService {
       contents: {
         parts: [
           { inlineData: { data: base64Data, mimeType } },
-          { text: "Analyze this asset for market arbitrage potential. Identify identifying features, estimated wholesale value, and high-demand corporate buyer profiles." }
+          { text: "Analyze this asset for market arbitrage potential. Identify estimated wholesale value and buyer profiles." }
         ]
       }
     });
     return response.text || "Analysis disrupted.";
   }
 
-  /**
-   * COMPUTATIONAL REASONING NODE
-   */
   async runComputationalReasoning(prompt: string): Promise<CodeExecutionPart[]> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
@@ -142,14 +106,11 @@ export class GeminiService {
     return results;
   }
 
-  /**
-   * IMAGE GENERATION
-   */
   async generateImage(prompt: string, config: { aspectRatio: string, quality: string }): Promise<string> {
     const ai = this.getClient();
-    const model = config.quality === 'high' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
+    const modelName = config.quality === 'high' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
     const response = await ai.models.generateContent({
-      model: model,
+      model: modelName,
       contents: { parts: [{ text: prompt }] },
       config: {
         imageConfig: {
@@ -159,17 +120,15 @@ export class GeminiService {
       }
     });
 
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
       }
     }
-    throw new Error("No image generated.");
+    throw new Error("Generation yielded no image data.");
   }
 
-  /**
-   * VIDEO GENERATION (VEO)
-   */
   async generateVideo(prompt: string, aspectRatio: '16:9' | '9:16'): Promise<string> {
     const ai = this.getClient();
     let operation = await ai.models.generateVideos({
@@ -183,22 +142,23 @@ export class GeminiService {
     });
 
     while (!operation.done) {
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 8000));
       operation = await ai.operations.getVideosOperation({ operation: operation });
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    return `${downloadLink}&key=${process.env.API_KEY}`;
+    if (!downloadLink) throw new Error("Video generation yielded no URI.");
+    
+    const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
   }
 
-  /**
-   * SOURCE INTEL ANALYSIS
-   */
   async runRepoAnalysis(repoName: string): Promise<{ patterns: string[], summary: string }> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Analyze the architectural patterns of the repository: ${repoName}. Identify core logical units and provide a summary of the siphoned logic.`,
+      contents: `Analyze architectual patterns of: ${repoName}. Return JSON with patterns array and summary string.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -213,9 +173,9 @@ export class GeminiService {
     });
 
     try {
-      return JSON.parse(response.text);
+      return JSON.parse(response.text || '{}');
     } catch (e) {
-      return { patterns: [], summary: "Analysis failed." };
+      return { patterns: [], summary: "Analysis failed to parse." };
     }
   }
 
@@ -223,19 +183,17 @@ export class GeminiService {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `[TUCKER ORCHESTRATOR v12.0]
-      CONTEXT: ${context}
-      Execute full sovereign cycle optimization plan.`,
+      contents: `[TUCKER ORCHESTRATOR v12.0] CONTEXT: ${context}. Execute optimization plan.`,
       config: { thinkingConfig: { thinkingBudget: 16000 } }
     });
-    return response.text;
+    return response.text || "Orchestration failed.";
   }
 
   async executeWorkflowStep(brand: Brand, key: string, step: WorkflowStep) {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Execute workflow step ${step.name} for brand ${brand.name}. Workflow type: ${key}.`,
+      contents: `Execute workflow step ${step.name} for brand ${brand.name}.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -248,14 +206,14 @@ export class GeminiService {
         }
       }
     });
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || '{}');
   }
 
   async fetchParcelIntelligence(pin: string): Promise<SpatialParcel> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Fetch detailed spatial intel for parcel PIN ${pin}. Return PostGIS OID, owner, county, timber species, volume, canopy height, and subsurface feature inferences.`,
+      contents: `Fetch detailed spatial intel for parcel PIN ${pin}.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -289,14 +247,14 @@ export class GeminiService {
         }
       }
     });
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || '{}');
   }
 
   async scanApexTriggers(): Promise<ApexTrigger[]> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: "Scan spatial apex triggers for imminent infrastructure shifts.",
+      contents: "Scan spatial apex triggers.",
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -314,14 +272,14 @@ export class GeminiService {
         }
       }
     });
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || '[]');
   }
 
   async fetchArbitrageAllocations(): Promise<ArbitrageNode[]> {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: "Fetch current zero-inventory arbitrage allocations for middleman profit extraction.",
+      contents: "Fetch arbitrage allocations.",
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -330,37 +288,29 @@ export class GeminiService {
             type: Type.OBJECT,
             properties: {
               id: { type: Type.STRING },
-              supplierNode: { type: Type.STRING },
-              buyerNode: { type: Type.STRING },
-              status: { type: Type.STRING },
-              allocation: { type: Type.STRING },
-              riskScore: { type: Type.STRING },
               commodity: { type: Type.STRING },
-              roi: { type: Type.STRING },
-              buyPrice: { type: Number },
-              sellPrice: { type: Number },
-              delta: { type: Number }
+              delta: { type: Type.NUMBER }
             }
           }
         }
       }
     });
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || '[]');
   }
 
   async performInstitutionalMegaScan() {
-    return this.runGroundedSearch("Institutional supply chain deltas, Blackwell production shifts, and middleman arbitrage opportunities for 2026.");
+    return this.runGroundedSearch("Institutional supply chain deltas 2026.");
   }
 
   async scanFintechNodes() {
-    return this.runGroundedSearch("Fortune 500 middleman settlement deltas and ISO-20022 liquidity rail status.");
+    return this.runGroundedSearch("ISO-20022 liquidity rail status.");
   }
 
   async getFinancialForecast(balance: number, history: any[]) {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Generate financial liquidity forecast based on current balance of ${balance}.`,
+      contents: `Generate financial liquidity forecast based on balance: ${balance}.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -378,14 +328,14 @@ export class GeminiService {
         }
       }
     });
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || '[]');
   }
 
   async assessCounterpartyRisk(entity: string) {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Assess counterparty risk for institutional entity: ${entity}`,
+      contents: `Assess counterparty risk for: ${entity}`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -398,14 +348,14 @@ export class GeminiService {
         }
       }
     });
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || '{}');
   }
 
   async generatePredictiveInvoices() {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: "Generate 10 predictive high-value institutional invoices for the Sovereign Node.",
+      contents: "Generate 10 predictive institutional invoices.",
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -425,7 +375,7 @@ export class GeminiService {
         }
       }
     });
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || '[]');
   }
 
   async runQuantumSpatialOptimization(parcel: string, node: string) {
@@ -446,7 +396,7 @@ export class GeminiService {
         }
       }
     });
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || '{}');
   }
 
   async getIBMTechnicalSweep() {
@@ -455,11 +405,11 @@ export class GeminiService {
       model: 'gemini-3-flash-preview',
       contents: "Execute IBM Technical Sweep for route reliability."
     });
-    return response.text;
+    return response.text || "Sweep failed.";
   }
 
   async getDeepIntel(ticker: string) {
-    return this.runGroundedSearch(`Deep financial intel for ${ticker} related to Blackwell demand and Rigetti quantum adoption.`);
+    return this.runGroundedSearch(`Deep financial intel for ${ticker}.`);
   }
 
   connectLive(callbacks: any, systemInstruction: string) {

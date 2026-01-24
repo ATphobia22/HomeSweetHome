@@ -22,7 +22,8 @@ export enum AppView {
   EPICENTER = 'epicenter',
   GLP_DOCTRINE = 'glp-doctrine',
   QUANTUM_AI_LENS = 'quantum-ai-lens',
-  MISSION_CONTROL = 'mission-control'
+  MISSION_CONTROL = 'mission-control',
+  AI_STUDIO = 'ai-studio'
 }
 
 export interface GitRepo {

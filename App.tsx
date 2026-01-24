@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppView, Brand, ActivityEntry, SystemMetrics, MediaAsset } from './types';
-import Sidebar from './components/Sidebar';
+import Sidebar from './Sidebar';
 import CommandCenter from './components/CommandCenter';
 import Treasury from './components/Treasury';
 import Dashboard from './components/Dashboard';
@@ -27,6 +27,7 @@ import GLPDoctrine from './components/GLPDoctrine';
 import QuantumAILens from './components/QuantumAILens';
 import MissionControl from './components/MissionControl';
 import BiometricOverlay from './components/BiometricOverlay';
+import Studio from './components/Studio';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.COMMAND_CENTER);
@@ -142,6 +143,9 @@ const App: React.FC = () => {
               onReAuth={() => setShowAuthOverlay(true)}
             />
           )}
+          {currentView === AppView.AI_STUDIO && (
+            <Studio onAssetGenerated={(a) => setAssets(prev => [a, ...prev])} />
+          )}
           {currentView === AppView.EPICENTER && (
             <Epicenter />
           )}
@@ -226,7 +230,7 @@ const App: React.FC = () => {
       </div>
 
       {currentView === AppView.VOICE && (
-        <div className="fixed inset-0 z-[150] bg-black/98 p-12 p-12 overflow-y-auto animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[150] bg-black/98 p-4 md:p-12 overflow-y-auto animate-in zoom-in-95 duration-300">
           <button onClick={() => setCurrentView(AppView.COMMAND_CENTER)} className="absolute top-10 right-10 text-slate-500 text-4xl hover:text-white transition-all">
             <i className="fa-solid fa-xmark"></i>
           </button>

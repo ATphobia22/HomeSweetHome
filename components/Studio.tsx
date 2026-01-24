@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MediaAsset } from '../types';
 import { gemini } from '../services/gemini';
@@ -38,7 +37,7 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
           setHasPaidKey(hasKey);
         }
       } catch (e) {
-        console.error("Error checking API key", e);
+        console.warn("Key check skipped.");
       }
     };
     checkKey();
@@ -49,7 +48,7 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
     if (isGenerating && type === 'video') {
       interval = setInterval(() => {
         setMessageIndex((prev) => (prev + 1) % VEO_MESSAGES.length);
-      }, 8000);
+      }, 7000);
     }
     return () => clearInterval(interval);
   }, [isGenerating, type]);
@@ -59,25 +58,26 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
       const aistudio = (window as any).aistudio;
       if (aistudio) {
         await aistudio.openSelectKey();
-        // Race condition mitigation
+        // Mitigate race condition by proceeding immediately
         setHasPaidKey(true);
       }
     } catch (e) {
-      console.error("Error opening key selector", e);
+      console.error("Auth bridge error:", e);
     }
   };
 
   const generate = async () => {
     if (!prompt) return;
     
-    if ((type === 'video' || quality === 'high') && !hasPaidKey) {
+    const needsAuth = type === 'video' || quality === 'high';
+    if (needsAuth && !hasPaidKey) {
       await handleKeySelection();
       return;
     }
 
     setIsGenerating(true);
     setPreview(null);
-    setStatus(type === 'video' ? VEO_MESSAGES[0] : 'Sovereign Core generating...');
+    setStatus(type === 'video' ? VEO_MESSAGES[0] : 'Igniting Sovereign Core...');
 
     try {
       let resultUrl = '';
@@ -92,7 +92,7 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
         id: Math.random().toString(36).substr(2, 9),
         type,
         url: resultUrl,
-        name: `Sovereign ${type === 'image' ? 'IMG' : 'VEO'}: ${prompt.slice(0, 20)}...`,
+        name: `Sovereign ${type === 'image' ? 'IMG' : 'VEO'}: ${prompt.slice(0, 15)}...`,
         timestamp: Date.now(),
         description: prompt
       };
@@ -101,9 +101,10 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
       console.error(err);
       if (err.message?.includes("Requested entity was not found")) {
         setHasPaidKey(false);
-        setStatus('Key Invalidated. Resetting Auth Gate.');
+        setStatus('Auth invalidated. Re-selection required.');
+        await handleKeySelection();
       } else {
-        setStatus('Orchestration failed. Retry requested.');
+        setStatus('Orchestration failed. Neural disruption detected.');
       }
     } finally {
       setIsGenerating(false);
@@ -126,12 +127,12 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div className="iphone-card rounded-[50px] p-10 space-y-8 bg-black/60 shadow-2xl border-white/5 relative overflow-hidden">
+        <div className="iphone-card rounded-[50px] p-10 space-y-8 bg-black/60 shadow-3xl border-white/5 relative overflow-hidden">
           <div className="scanner-line opacity-20"></div>
           
           <div className="space-y-4">
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Modality Selection</label>
-            <div className="flex gap-4 p-1 bg-black/40 rounded-3xl border border-white/10">
+            <div className="flex gap-4 p-1.5 bg-black/40 rounded-3xl border border-white/10">
               <button 
                 onClick={() => setType('image')}
                 className={`flex-1 py-4 rounded-2xl transition-all flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest ${type === 'image' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-white'}`}
@@ -148,11 +149,11 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
           </div>
 
           <div className="space-y-4">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Creative Prompt</label>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Sovereign Prompt</label>
             <textarea 
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Input Sovereign Command..."
+              placeholder="Describe the cinematic asset..."
               className="w-full h-32 bg-black/40 border border-white/10 rounded-[30px] p-8 focus:ring-1 focus:ring-indigo-500 outline-none resize-none text-white font-mono text-lg italic shadow-inner"
             />
           </div>
@@ -163,7 +164,7 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
               <select 
                 value={aspectRatio}
                 onChange={(e) => setAspectRatio(e.target.value as any)}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 outline-none text-[11px] font-black text-white uppercase italic"
+                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 outline-none text-[11px] font-black text-white uppercase italic appearance-none"
               >
                 <option value="1:1">1:1 Square</option>
                 <option value="16:9">16:9 Cinema</option>
@@ -176,7 +177,7 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
                 <select 
                   value={quality}
                   onChange={(e) => setQuality(e.target.value as any)}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 outline-none text-[11px] font-black text-white uppercase italic"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 outline-none text-[11px] font-black text-white uppercase italic appearance-none"
                 >
                   <option value="standard">Flash (Fast)</option>
                   <option value="high">Pro (Imagen 3)</option>
@@ -186,16 +187,17 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
           </div>
 
           {needsPaidKey && !hasPaidKey && (
-            <div className="p-6 bg-amber-500/5 border border-amber-500/20 rounded-3xl flex flex-col items-center text-center gap-4">
-              <p className="text-amber-200 text-[10px] font-black uppercase tracking-widest italic">
+            <div className="p-6 bg-amber-500/5 border border-amber-500/20 rounded-3xl flex flex-col items-center text-center gap-4 animate-in zoom-in-95">
+              <p className="text-amber-200 text-[10px] font-black uppercase tracking-widest italic leading-relaxed">
                 <i className="fa-solid fa-key mr-2"></i>
-                Requires Billing Authorization
+                Requires Paid Google Cloud Project
+                <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="block underline mt-2">Billing Docs</a>
               </p>
               <button 
                 onClick={handleKeySelection}
                 className="w-full py-4 bg-amber-500 text-black font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-amber-400 transition-all shadow-xl active:scale-95"
               >
-                Select Paid API Key
+                Authorize Paid API Key
               </button>
             </div>
           )}
@@ -203,10 +205,10 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
           <button 
             onClick={generate}
             disabled={isGenerating || !prompt}
-            className={`w-full py-8 rounded-[35px] font-black uppercase tracking-[0.4em] text-lg shadow-2xl transition-all active:scale-95 ${
+            className={`w-full py-8 rounded-[35px] font-black uppercase tracking-[0.4em] text-lg shadow-3xl transition-all active:scale-95 ${
               needsPaidKey && !hasPaidKey 
                 ? 'bg-slate-900 text-slate-700 cursor-not-allowed border border-white/5' 
-                : 'bg-gradient-to-r from-indigo-600 to-purple-700 text-white hover:shadow-indigo-500/20'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-700 text-white hover:shadow-indigo-500/30'
             }`}
           >
             {isGenerating ? (
@@ -217,7 +219,7 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
             ) : (
               <span className="flex items-center justify-center gap-4">
                 <i className="fa-solid fa-wand-magic-sparkles"></i>
-                Ignite Creation
+                {needsPaidKey && !hasPaidKey ? 'Authorization Required' : 'Ignite Creation'}
               </span>
             )}
           </button>
@@ -235,7 +237,7 @@ const Studio: React.FC<StudioProps> = ({ onAssetGenerated }) => {
             ) : isGenerating ? (
               <div className="flex flex-col items-center gap-10 p-12 text-center">
                 <div className="relative">
-                   <div className="w-24 h-24 rounded-full border-2 border-indigo-500/10 border-t-indigo-500 animate-spin"></div>
+                   <div className="w-24 h-24 rounded-full border-4 border-indigo-500/10 border-t-indigo-500 animate-spin"></div>
                    <i className="fa-solid fa-bolt-lightning absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-500 animate-pulse text-2xl"></i>
                 </div>
                 <div className="space-y-4">

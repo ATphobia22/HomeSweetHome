@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AppView, SystemMetrics } from '../types';
+import { AppView, SystemMetrics } from './types';
 
 interface SidebarProps {
   currentView: AppView;
@@ -11,6 +11,10 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, balance, metrics }) => {
   const menuItems = [
+    { view: AppView.EPICENTER, icon: 'fa-chess-queen', label: 'EPICENTER' },
+    { view: AppView.AI_STUDIO, icon: 'fa-wand-magic-sparkles', label: 'AI STUDIO' },
+    { view: AppView.QUANTUM_AI_LENS, icon: 'fa-microscope', label: 'AI LENS' },
+    { view: AppView.GLP_DOCTRINE, icon: 'fa-om', label: 'GLP DOCTRINE' },
     { view: AppView.COMMAND_CENTER, icon: 'fa-gamepad', label: 'COMMAND' },
     { view: AppView.GLOBAL_SEARCH, icon: 'fa-globe', label: 'GLOBAL INTEL' },
     { view: AppView.STRUCTURED_ALPHA, icon: 'fa-chart-mixed', label: 'STRUCTURED' },
