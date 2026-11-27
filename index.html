@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Mount Vernon, Indiana — Open World</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #1c2b1e; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #fff; }
+  #scene { position: fixed; inset: 0; }
+  #scene canvas { display: block; touch-action: none; }
+
+  /* ---------- start card (first paint: pure HTML/CSS, no scripts) ---------- */
+  #start { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #2b4a2f 0%, #1c2b1e 55%, #3a2f1d 100%); padding: 18px; overflow-y: auto; }
+  #start .card { max-width: 560px; width: 100%; text-align: center; background: rgba(0,0,0,.38);
+    border: 1px solid rgba(255,255,255,.18); border-radius: 18px; padding: 26px 22px 20px; }
+  #start img.avatar { width: 132px; height: 132px; object-fit: cover; border-radius: 50%;
+    border: 3px solid #d4a017; background: #22331f; }
+  #start h1 { margin: 14px 0 4px; font-size: 30px; line-height: 1.15; letter-spacing: .2px; }
+  #start h2 { margin: 0 0 12px; font-size: 15px; font-weight: 500; color: #e8d9a0; }
+  #start p { margin: 8px 0; font-size: 15px; line-height: 1.5; color: #f2f2ea; }
+  #start p.small { font-size: 12.5px; color: #cfd4c8; }
+  #playBtn { display: block; width: 100%; margin: 16px 0 6px; padding: 16px 20px; font-size: 20px; font-weight: 700;
+    color: #241a05; background: #d4a017; border: none; border-radius: 12px; cursor: pointer; min-height: 56px; }
+  #playBtn:active { background: #b8890f; }
+  .linklike { background: none; border: none; color: #e8d9a0; text-decoration: underline; font-size: 13px; cursor: pointer; padding: 8px; }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; display: none; }
+  #hud.on { display: block; }
+  .chip { pointer-events: auto; background: rgba(10,18,10,.72); border: 1px solid rgba(255,255,255,.22);
+    border-radius: 10px; color: #fff; }
+  #titleChip { position: absolute; top: 10px; left: 10px; padding: 8px 12px; font-size: 14px; font-weight: 700; }
+  #titleChip small { display: block; font-size: 11px; font-weight: 400; color: #d8d8c8; }
+  #aboutBtn { position: absolute; top: 10px; right: 10px; padding: 10px 14px; font-size: 14px; font-weight: 700;
+    cursor: pointer; min-height: 44px; }
+  #modeBar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 10px; width: min(680px, calc(100% - 16px));
+    padding: 10px 12px; pointer-events: auto; }
+  #modeBar .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .modeBtn { flex: 1; min-width: 84px; padding: 11px 6px; font-size: 15px; font-weight: 700; color: #fff;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 9px; cursor: pointer; min-height: 46px; }
+  .modeBtn.active { background: #d4a017; color: #241a05; border-color: #d4a017; }
+  .sliderWrap { flex: 2 1 220px; min-width: 200px; padding: 2px 4px 0; }
+  .sliderWrap label { display: flex; justify-content: space-between; font-size: 12.5px; color: #e8e8dc; margin-bottom: 2px; }
+  .sliderWrap label b { color: #ffd968; }
+  .sliderWrap input[type=range] { width: 100%; height: 30px; accent-color: #d4a017; }
+  .sliderWrap .ticks { display: flex; justify-content: space-between; font-size: 10.5px; color: #b9bfae; margin-top: -2px; }
+  #stopsBtn { padding: 11px 14px; font-size: 15px; font-weight: 700; color: #241a05; background: #e8d9a0;
+    border: none; border-radius: 9px; cursor: pointer; min-height: 46px; }
+
+  /* virtual joystick */
+  #stick { position: absolute; left: 18px; bottom: 132px; width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(255,255,255,.10); border: 2px solid rgba(255,255,255,.35); pointer-events: auto; display: none; }
+  #stick.on { display: block; }
+  #stickKnob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px;
+    border-radius: 50%; background: rgba(212,160,23,.85); border: 2px solid #fff3; }
+  #flyBtns { position: absolute; right: 18px; bottom: 132px; display: none; flex-direction: column; gap: 10px; pointer-events: auto; }
+  #flyBtns.on { display: flex; }
+  #flyBtns button { width: 56px; height: 56px; font-size: 22px; font-weight: 700; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.35); background: rgba(10,18,10,.72); color: #fff; cursor: pointer; }
+
+  /* ---------- info card / about / progress ---------- */
+  #infoCard { position: absolute; left: 50%; transform: translateX(-50%); bottom: 132px; width: min(560px, calc(100% - 20px));
+    background: rgba(12,20,12,.92); border: 1px solid rgba(255,255,255,.25); border-radius: 14px;
+    padding: 14px 16px; pointer-events: auto; display: none; max-height: 46vh; overflow-y: auto; }
+  #infoCard.on { display: block; }
+  #infoCard h3 { margin: 0 0 4px; font-size: 19px; }
+  #infoCard .kind { font-size: 12px; color: #e8d9a0; text-transform: uppercase; letter-spacing: .08em; }
+  #infoCard p { margin: 8px 0; font-size: 14.5px; line-height: 1.55; color: #f0f0e6; }
+  #infoCard .src { font-size: 12px; color: #b9bfae; }
+  #infoCard .approx { font-size: 12px; color: #ffcf6b; }
+  #infoCard button { margin-top: 8px; padding: 11px 16px; font-size: 15px; font-weight: 700; border-radius: 9px;
+    border: none; cursor: pointer; min-height: 46px; }
+  #flyToBtn { background: #d4a017; color: #241a05; margin-right: 8px; }
+  #infoClose { background: rgba(255,255,255,.16); color: #fff; }
+  #stopsList { position: absolute; left: 50%; transform: translateX(-50%); bottom: 132px; width: min(560px, calc(100% - 20px));
+    background: rgba(12,20,12,.94); border: 1px solid rgba(255,255,255,.25); border-radius: 14px;
+    padding: 12px; pointer-events: auto; display: none; max-height: 52vh; overflow-y: auto; }
+  #stopsList.on { display: block; }
+  #stopsList h3 { margin: 2px 4px 10px; font-size: 17px; }
+  #stopsList button.stop { display: block; width: 100%; text-align: left; margin: 4px 0; padding: 12px 14px;
+    font-size: 15px; background: rgba(255,255,255,.10); color: #fff; border: 1px solid rgba(255,255,255,.18);
+    border-radius: 9px; cursor: pointer; min-height: 48px; }
+  #about { position: fixed; inset: 0; z-index: 50; background: rgba(8,12,8,.88); display: none;
+    align-items: flex-start; justify-content: center; padding: 20px 12px; overflow-y: auto; }
+  #about.on { display: flex; }
+  #about .panel { max-width: 640px; width: 100%; background: #14200f; border: 1px solid rgba(255,255,255,.22);
+    border-radius: 16px; padding: 20px; }
+  #about h2 { margin: 0 0 8px; font-size: 21px; }
+  #about h3 { margin: 16px 0 4px; font-size: 15px; color: #e8d9a0; }
+  #about p, #about li { font-size: 14px; line-height: 1.55; color: #ececdf; }
+  #about ul { margin: 4px 0; padding-left: 20px; }
+  #aboutClose { margin-top: 14px; width: 100%; padding: 13px; font-size: 16px; font-weight: 700; border-radius: 10px;
+    border: none; background: #d4a017; color: #241a05; cursor: pointer; min-height: 50px; }
+  #progress { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center;
+    background: rgba(10,16,10,.82); padding: 20px; }
+  #progress.on { display: flex; }
+  #progress .box { width: min(480px, 100%); text-align: center; }
+  #progress .bar { height: 14px; border-radius: 8px; background: rgba(255,255,255,.16); overflow: hidden; }
+  #progress .fill { height: 100%; width: 0%; background: #d4a017; border-radius: 8px; transition: width .2s; }
+  #progress p { font-size: 14.5px; color: #eee; margin: 12px 0 0; }
+  #toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 150px; z-index: 35; display: none;
+    background: rgba(10,18,10,.9); border: 1px solid rgba(255,255,255,.3); border-radius: 10px;
+    padding: 10px 16px; font-size: 14px; }
+  @media (max-width: 480px) {
+    #start h1 { font-size: 25px; }
+    #stick { bottom: 178px; }
+    #flyBtns { bottom: 178px; }
+    #infoCard, #stopsList { bottom: 178px; }
+  }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+
+<!-- START CARD: first paint, no engine, no data -->
+<div id="start">
+  <div class="card">
+    <img class="avatar" id="heroImg" alt="Oak Grove Slim">
+    <h1>Mount Vernon, Indiana</h1>
+    <h2>An open world on the Ohio River &middot; Posey County</h2>
+    <p>Walk the riverfront, stand under the courthouse gold dome, and see the town the way the river sees it.
+       Real ground, real buildings, real streets &mdash; and one slider that shows what the water does when it rises.</p>
+    <button id="playBtn" type="button">▶&nbsp; Enter the World</button>
+    <p class="small">Built from public data: USGS 3DEP elevation, IGIO building footprints,
+       OpenStreetMap streets, USDA NAIP aerial photos. Base flood elevation 369.1 ft NAVD88.
+       Best on Wi-Fi; your phone is the real test.</p>
+    <button class="linklike" id="aboutLink" type="button">Data, sources &amp; what&rsquo;s estimated</button>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div id="progress"><div class="box">
+  <div class="bar"><div class="fill" id="progressFill"></div></div>
+  <p id="progressText">Loading&hellip;</p>
+</div></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="chip" id="titleChip">Mount Vernon, Indiana<small>Ohio River &middot; BFE 369.1 ft NAVD88</small></div>
+  <button class="chip" id="aboutBtn" type="button">About</button>
+  <div id="stick"><div id="stickKnob"></div></div>
+  <div id="flyBtns"><button id="flyUp" type="button" aria-label="Fly up">&#9650;</button><button id="flyDown" type="button" aria-label="Fly down">&#9660;</button></div>
+  <div id="infoCard">
+    <div class="kind" id="infoKind"></div>
+    <h3 id="infoTitle"></h3>
+    <p id="infoDesc"></p>
+    <p class="approx" id="infoApprox" style="display:none"></p>
+    <p class="src" id="infoSrc"></p>
+    <button id="flyToBtn" type="button">Fly here</button><button id="infoClose" type="button">Close</button>
+  </div>
+  <div id="stopsList"><h3>Discovery stops</h3><div id="stopsButtons"></div>
+    <button class="stop" id="stopsClose" type="button">Close</button></div>
+  <div class="chip" id="modeBar">
+    <div class="row">
+      <button class="modeBtn active" id="modeOrbit" type="button">Orbit</button>
+      <button class="modeBtn" id="modeWalk" type="button">Walk</button>
+      <button class="modeBtn" id="modeFly" type="button">Fly</button>
+      <button id="stopsBtn" type="button">Stops</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="sliderWrap">
+        <label><span>Flood water</span><b id="floodRead">342.5 ft &middot; normal pool</b></label>
+        <input type="range" id="floodSlider" min="342.5" max="375" step="0.1" value="342.5">
+        <div class="ticks"><span>342.5 pool</span><span>BFE 369.1</span><span>375</span></div>
+      </div>
+      <div class="sliderWrap">
+        <label><span>Time of day</span><b id="timeRead">5:30 PM &middot; golden hour</b></label>
+        <input type="range" id="timeSlider" min="6" max="19" step="0.25" value="17.5">
+        <div class="ticks"><span>6 AM</span><span>Noon</span><span>7 PM</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<!-- ABOUT -->
+<div id="about"><div class="panel">
+  <h2>About this world</h2>
+  <p>Mount Vernon, Indiana, rebuilt as a living open world from public data. Nothing here is a
+     simulation except the flood slider &mdash; and the slider is only a water level, not a forecast.</p>
+  <h3>What&rsquo;s real</h3>
+  <ul>
+    <li><b>Ground:</b> Indiana 2020 DEM mosaic (33 tiles, USGS 3DEP / IndianaMap), 2.5 ft pixels, resampled to a 200&times;200 grid. Vertical datum treated as NAVD88 (assumed from source fields, not independently certified).</li>
+    <li><b>Buildings:</b> 4,398 LOD1 prisms from IGIO Building Footprints of Indiana 2016&ndash;2020 (LiDAR 2020). Heights are <b>derived estimates</b> (Overture Maps nearest match where available, 4&nbsp;m rural median otherwise) &mdash; not surveyed, not certified, not regulatory.</li>
+    <li><b>Streets:</b> 1,109 OpenStreetMap ways (Geofabrik Indiana, 2026-11-18, ODbL). Names shown only where OSM has them.</li>
+    <li><b>Aerial photo:</b> USDA NAIP, public domain, four quadrants mosaicked for this area. The live USDA fetch failed from the build machine, so the 2026-11-19 composite is reused; its extent is the same area as the elevation grid.</li>
+    <li><b>Landmarks:</b> descriptions from the National Register form for the Mount Vernon Downtown Historic District (NPS Form 10-900, 2003). Positions from OSM points where available; street-address positions are approximate and labelled as such.</li>
+    <li><b>People:</b> Oak Grove Slim is the hero. Cutouts are the real family photos, used as still figures &mdash; nobody is animated.</li>
+  </ul>
+  <h3>What&rsquo;s estimated or interpretive</h3>
+  <ul>
+    <li>Building heights (see above) and the courthouse, gazebo and amphitheater models, which are built from written descriptions, not measured drawings.</li>
+    <li>Downtown storefront positions from street addresses on the town grid &mdash; approximate.</li>
+    <li>The riverfront amphitheater is an interpretive addition for the open world.</li>
+    <li>Tree placement is seeded scatter on open ground, not a tree survey.</li>
+    <li>South of the river, the elevation grid has an inpainted no-data patch (Kentucky bottomland) &mdash; flat by construction, photo texture still shows the fields.</li>
+  </ul>
+  <h3>The flood slider</h3>
+  <p>The slider raises a water plane from normal pool (342.5 ft) to 375 ft. The marked line is the
+     base flood elevation, <b>369.1 ft NAVD88</b> (FEMA FIS 18129CV000A Table 9). The count of
+     buildings below the waterline is a simple ground-elevation count, not a damage estimate and not
+     a regulatory determination. The 1937 crest &mdash; 59.25 ft on the Mount Vernon gauge, February 2, 1937 &mdash;
+     is a gauge height, not a NAVD88 elevation.</p>
+  <h3>Ownership</h3>
+  <p>All code on this page was written for this build. No map service, no tokens, no accounts.
+     Three.js r152 (MIT) is vendored locally.</p>
+  <button id="aboutClose" type="button">Close</button>
+</div></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>
